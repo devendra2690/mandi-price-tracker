@@ -47,6 +47,16 @@ const Dashboard = ({ data, onReset }) => {
         setHoveredDate(time);
     };
 
+    // Ref for scrolling
+    const chartRef = React.useRef(null);
+
+    const handleSnapshotClick = (date) => {
+        handleCrosshairMove(date);
+        if (chartRef.current) {
+            chartRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
     // key statistics
     const stats = useMemo(() => {
         if (!finalData.length) return null;
@@ -155,7 +165,7 @@ const Dashboard = ({ data, onReset }) => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>View Chart →</span>
                                         <span
-                                            onClick={() => handleCrosshairMove(stats.maxRawDate)}
+                                            onClick={() => handleSnapshotClick(stats.maxRawDate)}
                                             title={`Click to view details for ${stats.maxDate}`}
                                             style={{
                                                 fontSize: '0.75rem',
@@ -188,7 +198,7 @@ const Dashboard = ({ data, onReset }) => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>View Chart →</span>
                                         <span
-                                            onClick={() => handleCrosshairMove(stats.minRawDate)}
+                                            onClick={() => handleSnapshotClick(stats.minRawDate)}
                                             title={`Click to view details for ${stats.minDate}`}
                                             style={{
                                                 fontSize: '0.75rem',
@@ -224,7 +234,7 @@ const Dashboard = ({ data, onReset }) => {
             </div>
 
             {/* Bottom Row: Full Width Historical Deep Dive */}
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div ref={chartRef} style={{ gridColumn: '1 / -1' }}>
                 <HistoricalTrendChart
                     data={stateFilteredData}
                     hoveredDate={hoveredDate}
