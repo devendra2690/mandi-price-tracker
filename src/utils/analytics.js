@@ -110,6 +110,8 @@ const predictFutureTrend = (data, targetDate) => {
     // We want specifically the transition from "Month X" to "Month X+1" in historical years
     const uniqueYears = [...new Set(data.map(d => d.rawDate?.getFullYear()))].filter(y => y);
 
+    const history = [];
+
     uniqueYears.forEach(year => {
         // Skip the current future transition if it doesn't exist yet (obviously)
         if (year === currentYear && nextYearOffset === 0) return;
@@ -122,6 +124,7 @@ const predictFutureTrend = (data, targetDate) => {
             const nextPrice = priceMap.get(nextKey);
             const pctChange = ((nextPrice - currPrice) / currPrice) * 100;
             changes.push(pctChange);
+            history.push({ year, currPrice, nextPrice, pctChange });
         }
     });
 
@@ -140,7 +143,8 @@ const predictFutureTrend = (data, targetDate) => {
         probability: winRate >= 50 ? winRate : (100 - winRate), // If 20% win rate (up), then 80% probability of Down
         avgChange: avgChange,
         sampleSize: total,
-        nextMonthName: nextMonthName
+        nextMonthName: nextMonthName,
+        history: history.sort((a, b) => b.year - a.year) // New: detailed history sorted desc
     };
 };
 
@@ -211,6 +215,23 @@ export const analyzeMarket = (data, seasonalityData, targetEntry = null) => {
         }
     }
 
+    // 4. Gather Full Historical Context (Prices for this month across ALL years)
+    const historicalContext = [];
+    if (currentEntry.rawDate) {
+        const tMonth = currentEntry.rawDate.getMonth();
+        const availableYears = [...new Set(data.map(d => d.rawDate?.getFullYear()))].filter(y => y);
+
+        availableYears.forEach(year => {
+            const historyData = data.filter(d => d.rawDate?.getFullYear() === year && d.rawDate?.getMonth() === tMonth);
+            if (historyData.length > 0) {
+                const yearlyAvg = historyData.reduce((acc, curr) => acc + curr.avgPrice, 0) / historyData.length;
+                historicalContext.push({ year, price: yearlyAvg });
+            }
+        });
+        // Sort descending by year
+        historicalContext.sort((a, b) => b.year - a.year);
+    }
+
     // Recommendation Logic Tree
     const totalAvg = data.reduce((acc, curr) => acc + curr.avgPrice, 0);
     const marketAverage = totalAvg / data.length;
@@ -221,7 +242,8 @@ export const analyzeMarket = (data, seasonalityData, targetEntry = null) => {
         reason: 'Analyzing market trends...',
         type: 'neutral',
         seasonalAnalysis,
-        yoy: yoyAnalysis
+        yoy: yoyAnalysis,
+        historicalContext // New: Full history for this month
     };
 
     // Case A: Near All-Time Low (Strongest Signal)

@@ -56,9 +56,35 @@ const RecommendationEngine = ({ recommendation }) => {
                 {reason}
             </p>
 
-            {/* Year over Year Analysis Section */}
-            {recommendation.yoy && (
+            {/* 1. Technical Analysis / "Why" Section */}
+            {recommendation.historicalContext && recommendation.historicalContext.length > 0 && (
                 <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <Info size={14} color="#94a3b8" />
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', letterSpacing: '0.5px' }}>
+                            HISTORICAL CONTEXT (SAME MONTH)
+                        </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.5rem' }}>
+                        {recommendation.historicalContext.map((item) => (
+                            <div key={item.year} style={{
+                                background: 'rgba(255,255,255,0.03)',
+                                padding: '8px',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{item.year}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#e2e8f0' }}>₹{item.price.toFixed(0)}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* 2. Year over Year Analysis Section (Keep existing if simple comparison preferred, or merge) */}
+            {recommendation.yoy && !recommendation.historicalContext && (
+                <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                    {/* ... existing YoY code ... */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                         <Calendar size={14} color="#94a3b8" />
                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', letterSpacing: '0.5px' }}>
@@ -114,10 +140,30 @@ const RecommendationEngine = ({ recommendation }) => {
                                 {recommendation.prediction.probability.toFixed(0)}% Probability
                             </span>
                         </div>
-                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.4' }}>
-                            Based on last {recommendation.prediction.sampleSize} years, prices historically {recommendation.prediction.direction === 'UP' ? 'increased' : 'decreased'} in {recommendation.prediction.nextMonthName} by an average of
-                            <span style={{ color: '#e2e8f0', fontWeight: 600 }}> {Math.abs(recommendation.prediction.avgChange).toFixed(1)}%</span>.
-                        </p>
+
+                        {/* New: Evidence Table for Prediction */}
+                        {recommendation.prediction.history && (
+                            <div style={{ marginTop: '0.75rem', fontSize: '0.8rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', marginBottom: '4px', fontSize: '0.7rem' }}>
+                                    <span>Historical Trend</span>
+                                    <span>Change</span>
+                                </div>
+                                {recommendation.prediction.history.map(h => (
+                                    <div key={h.year} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <span style={{ color: '#94a3b8' }}>{h.year}</span>
+                                        <span style={{ color: h.pctChange > 0 ? '#f87171' : '#34d399', fontWeight: 500 }}>
+                                            {h.pctChange > 0 ? '↑' : '↓'} {Math.abs(h.pctChange).toFixed(1)}%
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {!recommendation.prediction.history && (
+                            <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.4', marginTop: '0.5rem' }}>
+                                Based on historical data, prices typically {recommendation.prediction.direction === 'UP' ? 'increase' : 'decrease'} in {recommendation.prediction.nextMonthName}.
+                            </p>
+                        )}
                     </div>
                 </div>
             )}
