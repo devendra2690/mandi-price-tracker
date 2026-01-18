@@ -23,38 +23,65 @@ function App() {
     return null;
   });
 
+  const [storageWarning, setStorageWarning] = useState(false);
+
   const handleDataLoaded = (parsedData) => {
     setData(parsedData);
+    setStorageWarning(false);
     try {
       localStorage.setItem('mandiData', JSON.stringify(parsedData));
     } catch (e) {
-      console.error("Failed to save data. File might be too large.", e);
-      alert("Note: Data is too large to save for next visit, but works for now.");
+      console.warn("Data too large for localStorage, skipping persistence.");
+      setStorageWarning(true);
     }
   };
 
   const handleReset = () => {
     setData(null);
+    setStorageWarning(false);
     localStorage.removeItem('mandiData');
   }
 
   return (
     <div className="app-container" style={{ maxWidth: '1440px', margin: '0 auto', padding: '2rem' }}>
-      <header style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{
-          background: 'var(--accent-primary)',
-          padding: '10px',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <LayoutDashboard size={24} color="white" />
+      <header style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{
+            background: 'var(--accent-primary)',
+            padding: '10px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <LayoutDashboard size={24} color="white" />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '2rem' }}>Commodity Tracker</h1>
+            <p style={{ color: 'var(--text-secondary)' }}>Market Intelligence & Price Analytics</p>
+          </div>
         </div>
-        <div>
-          <h1 style={{ fontSize: '2rem' }}>Commodity Tracker</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Market Intelligence & Price Analytics</p>
-        </div>
+
+        {storageWarning && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            style={{
+              marginLeft: 'auto',
+              background: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              color: '#fbbf24',
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <span>⚠️ Large dataset detected. Data won't persist after refresh.</span>
+          </motion.div>
+        )}
       </header>
 
       <main>

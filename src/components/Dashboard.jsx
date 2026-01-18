@@ -277,10 +277,13 @@ const Dashboard = ({ data, onReset }) => {
                     </div>
                 )}
 
-                {/* Seasonality Chart */}
-                <SeasonalityChart seasonalityData={seasonalityData} />
-
             </div>
+
+            {/* Full Width: Seasonality Analysis */}
+            <div style={{ gridColumn: '1 / -1' }}>
+                <SeasonalityChart seasonalityData={seasonalityData} />
+            </div>
+
 
             {/* Full Width: Market Timing Guide */}
             <div style={{ gridColumn: '1 / -1' }}>

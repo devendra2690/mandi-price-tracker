@@ -9,7 +9,6 @@ const MarketTimingGuide = ({ seasonalityData }) => {
     const validMonthsCount = seasonalityData.monthlyAverages.filter(m => m.count > 0).length;
     const seasonalAvg = seasonalityData.monthlyAverages.reduce((acc, m) => acc + (m.count > 0 ? m.avgPrice : 0), 0) / (validMonthsCount || 1);
 
-
     // Filter valid months and sort by price
     const sortedMonths = [...seasonalityData.monthlyAverages]
         .filter(m => m.count > 0)
@@ -18,10 +17,14 @@ const MarketTimingGuide = ({ seasonalityData }) => {
     if (sortedMonths.length < 3) return null;
 
     // Categorize
-    // Best: Lowest 3 prices
     const bestMonths = sortedMonths.slice(0, 3);
-    // Avoid: Highest 3 prices
-    const avoidMonths = sortedMonths.slice(-3).reverse(); // Showing highest first
+    const avoidMonths = sortedMonths.slice(-3).reverse();
+
+    // Calculate Price Targets
+    const idealPrice = bestMonths.reduce((acc, m) => acc + m.avgPrice, 0) / bestMonths.length;
+    const avoidPriceThreshold = avoidMonths.reduce((acc, m) => acc + m.avgPrice, 0) / avoidMonths.length;
+
+
     // Neutral: The rest
     const neutralMonths = sortedMonths.slice(3, -3).sort((a, b) => {
         // Sort neutral by calendar order
@@ -231,6 +234,48 @@ const MarketTimingGuide = ({ seasonalityData }) => {
                                 <span>White: Typical / Average Price</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Price Strategy Banner */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem',
+                marginBottom: '2rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '8px',
+                padding: '1rem'
+            }}>
+                {/* Buy Target */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <div style={{
+                        width: '36px', height: '36px', borderRadius: '8px',
+                        background: 'rgba(52, 211, 153, 0.15)', border: '1px solid rgba(52, 211, 153, 0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <TrendingDown size={18} color="#34d399" />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Target Buy Price</div>
+                        <div style={{ fontSize: '1.2rem', color: '#e2e8f0', fontWeight: 700 }}>~₹{idealPrice.toFixed(0)} <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#34d399' }}>or less</span></div>
+                    </div>
+                </div>
+
+                {/* Avoid Target */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <div style={{
+                        width: '36px', height: '36px', borderRadius: '8px',
+                        background: 'rgba(248, 113, 113, 0.15)', border: '1px solid rgba(248, 113, 113, 0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <TrendingUp size={18} color="#f87171" />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Usually Expensive</div>
+                        <div style={{ fontSize: '1.2rem', color: '#e2e8f0', fontWeight: 700 }}>&gt; ₹{avoidPriceThreshold.toFixed(0)}</div>
                     </div>
                 </div>
             </div>
