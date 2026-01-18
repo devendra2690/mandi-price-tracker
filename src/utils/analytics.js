@@ -365,14 +365,33 @@ export const analyzeSeasonality = (data) => {
     const monthlyAverages = monthNames.map((name, index) => {
         const stat = monthStats[index];
         if (!stat || stat.count === 0) {
-            return { month: name, avgPrice: 0, count: 0, min: 0, max: 0 };
+            return { month: name, avgPrice: 0, count: 0, min: 0, max: 0, history: [] };
         }
+
+        // Calculate per-year averages for this month
+        const yearStats = {}; // year -> { total, count }
+        data.forEach(item => {
+            const d = new Date(item.date);
+            if (d.getMonth() === index) {
+                const y = d.getFullYear();
+                if (!yearStats[y]) yearStats[y] = { total: 0, count: 0 };
+                yearStats[y].total += item.avgPrice;
+                yearStats[y].count += 1;
+            }
+        });
+
+        const history = Object.keys(yearStats).map(year => ({
+            year: parseInt(year),
+            price: yearStats[year].total / yearStats[year].count
+        })).sort((a, b) => b.year - a.year);
+
         return {
             month: name,
             avgPrice: stat.total / stat.count,
             min: stat.min,
             max: stat.max,
-            count: stat.count
+            count: stat.count,
+            history: history // Detailed year-wise breakdown
         };
     });
 
