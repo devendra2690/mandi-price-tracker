@@ -23,6 +23,7 @@ ChartJS.register(
 
 const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
     const [lookahead, setLookahead] = React.useState(0);
+    const [historyView, setHistoryView] = React.useState('timeline'); // 'timeline' | 'seasonal'
 
     // Helper: Generate a unique key for grouping (e.g., "2023-Q1")
     const getBucketKey = (date, mode) => {
@@ -94,12 +95,9 @@ const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
             return stats ? { ...stats, avg: stats.total / stats.count } : null;
         };
 
-        // Standard Aggregation (Non-Month modes OR Month mode without lookahead)
-        // Actually, let's keep the existing logic for non-Month modes to preserve their strict behavior
-        // And use new logic for Month + Lookahead
-
-        if (mode !== 'Month') {
-            // ... Existing Bucket Logic (Preserved for Quarter/Half/Year) ...
+        // Standard Aggregation (Non-Month modes OR Month mode in 'timeline' view)
+        if (mode !== 'Month' || historyView === 'timeline') {
+            // ... Existing Bucket Logic (Preserved for Quarter/Half/Year/Timeline) ...
             const buckets = new Map();
             data.forEach(item => {
                 if (!item.rawDate) return;
@@ -114,14 +112,17 @@ const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
                 b.max = Math.max(b.max, item.maxPrice);
             });
             const sortedKeys = Array.from(buckets.keys()).sort((a, b) => buckets.get(a).sortKey - buckets.get(b).sortKey);
-            // ... map to datasets ...
-            // (Reconstructing strictly to match previous behavior)
+
+            // Map to datasets
             const prices = sortedKeys.map(k => buckets.get(k).total / buckets.get(k).count);
             const minPrices = sortedKeys.map(k => buckets.get(k).min);
             const maxPrices = sortedKeys.map(k => buckets.get(k).max);
 
             let activeIndex = -1;
-            if (hoveredDate) {
+            if (hoveredDate && mode === 'Month' && historyView === 'timeline') {
+                const activeKey = getBucketKey(hoveredDate, 'Month');
+                activeIndex = sortedKeys.indexOf(activeKey);
+            } else if (hoveredDate && mode !== 'Month') {
                 const activeKey = getBucketKey(hoveredDate, mode);
                 activeIndex = sortedKeys.indexOf(activeKey);
             }
@@ -191,12 +192,25 @@ const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
                 return stats ? stats.max : null;
             });
 
+            // Dynamic color generation for larger datasets
+            const opacity = Math.max(0.3, 1 - (i * 0.1)); // Fade out slightly for future months? Or cycle colors?
+            // Minimal palette cycle
+            const colors = [
+                '52, 211, 153', // Emerald (Base)
+                '96, 165, 250', // Blue
+                '167, 139, 250', // Purple
+                '244, 114, 182', // Pink
+                '251, 146, 60',  // Orange
+                '250, 204, 21'   // Yellow
+            ];
+            const colorBase = colors[i % colors.length];
+
             datasets.push({
                 label: mName,
                 data: datasetData,
                 extraData: { min: minData, max: maxData },
-                backgroundColor: i === 0 ? 'rgba(52, 211, 153, 0.7)' : (i === 1 ? 'rgba(96, 165, 250, 0.7)' : 'rgba(167, 139, 250, 0.7)'),
-                borderColor: i === 0 ? 'rgba(52, 211, 153, 1)' : (i === 1 ? 'rgba(96, 165, 250, 1)' : 'rgba(167, 139, 250, 1)'),
+                backgroundColor: `rgba(${colorBase}, 0.7)`,
+                borderColor: `rgba(${colorBase}, 1)`,
                 borderWidth: 1,
                 borderRadius: 4,
                 barPercentage: 0.8,
@@ -209,7 +223,7 @@ const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
             datasets
         };
 
-    }, [data, mode, hoveredDate, lookahead]);
+    }, [data, mode, hoveredDate, lookahead, historyView]);
 
     const options = {
         responsive: true,
@@ -279,26 +293,71 @@ const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
 
                 {/* Mode Controls */}
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    {/* Lookahead Controls (Only for Month mode) */}
+                </div>
+
+                {/* Mode Controls */}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    {/* View Toggle (Timeline vs Seasonal) - Only for Month Mode */}
                     {mode === 'Month' && (
+                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '2px' }}>
+                            <button
+                                onClick={() => setHistoryView('timeline')}
+                                style={{
+                                    background: historyView === 'timeline' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                                    color: historyView === 'timeline' ? '#fff' : 'var(--text-secondary)',
+                                    border: 'none',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.7rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                Timeline
+                            </button>
+                            <button
+                                onClick={() => setHistoryView('seasonal')}
+                                style={{
+                                    background: historyView === 'seasonal' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                                    color: historyView === 'seasonal' ? '#fff' : 'var(--text-secondary)',
+                                    border: 'none',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.7rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                Seasonal
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Lookahead Controls (Only for Month mode + Seasonal View) */}
+                    {mode === 'Month' && historyView === 'seasonal' && (
                         <div style={{ display: 'flex', gap: '0.25rem', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '6px' }}>
-                            {[0, 1, 2].map(l => (
+                            {[
+                                { label: '1M', value: 0 },
+                                { label: '3M', value: 2 },
+                                { label: '6M', value: 5 },
+                                { label: '12M', value: 11 }
+                            ].map((opt) => (
                                 <button
-                                    key={l}
-                                    onClick={() => setLookahead(l)}
+                                    key={opt.label}
+                                    onClick={() => setLookahead(opt.value)}
                                     style={{
-                                        background: lookahead === l ? 'rgba(52, 211, 153, 0.2)' : 'transparent',
-                                        color: lookahead === l ? 'rgb(52, 211, 153)' : 'var(--text-secondary)',
+                                        background: lookahead === opt.value ? 'rgba(52, 211, 153, 0.2)' : 'transparent',
+                                        color: lookahead === opt.value ? 'rgb(52, 211, 153)' : 'var(--text-secondary)',
                                         border: 'none',
                                         padding: '2px 8px',
                                         borderRadius: '4px',
                                         fontSize: '0.7rem',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        fontWeight: lookahead === l ? 600 : 400
+                                        fontWeight: lookahead === opt.value ? 600 : 400
                                     }}
                                 >
-                                    {l === 0 ? 'Current' : `+${l} Mo`}
+                                    {opt.label}
                                 </button>
                             ))}
                         </div>
