@@ -50,11 +50,34 @@ const Dashboard = ({ data, onReset }) => {
     // key statistics
     const stats = useMemo(() => {
         if (!finalData.length) return null;
-        const prices = finalData.map(d => d.avgPrice);
-        const min = Math.min(...finalData.map(d => d.minPrice));
-        const max = Math.max(...finalData.map(d => d.maxPrice));
-        const avg = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(0);
-        return { min, max, avg };
+
+        // Find items with absolute min and max prices
+        let minItem = finalData[0];
+        let maxItem = finalData[0];
+        let totalAvg = 0;
+
+        for (const item of finalData) {
+            if (item.minPrice < minItem.minPrice) minItem = item;
+            if (item.maxPrice > maxItem.maxPrice) maxItem = item;
+            totalAvg += item.avgPrice;
+        }
+
+        const avg = (totalAvg / finalData.length).toFixed(0);
+
+        // Helper to format date
+        const formatDate = (dateStr) => {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        };
+
+        return {
+            min: minItem.minPrice,
+            minDate: formatDate(minItem.date),
+            max: maxItem.maxPrice,
+            maxDate: formatDate(maxItem.date),
+            avg
+        };
     }, [finalData]);
 
     return (
@@ -123,11 +146,21 @@ const Dashboard = ({ data, onReset }) => {
                         </h4>
                         <div style={{ display: 'grid', gap: '1.5rem' }}>
                             <div>
-                                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Highest Price</p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                    <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Highest Price</p>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
+                                        {stats.maxDate}
+                                    </span>
+                                </div>
                                 <p style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--danger)' }}>₹{stats.max}</p>
                             </div>
                             <div>
-                                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Lowest Price</p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                    <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Lowest Price</p>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
+                                        {stats.minDate}
+                                    </span>
+                                </div>
                                 <p style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--success)' }}>₹{stats.min}</p>
                             </div>
                         </div>

@@ -237,6 +237,14 @@ const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
                 padding: 12,
                 displayColors: false,
                 callbacks: {
+                    title: (tooltipItems) => {
+                        // In Seasonal view, dataset label is the Month (Jan) and x-label is Year (2024)
+                        const item = tooltipItems[0];
+                        if (historyView === 'seasonal' && mode === 'Month') {
+                            return `${item.dataset.label} ${item.label}`;
+                        }
+                        return item.label;
+                    },
                     label: (context) => {
                         const avg = context.raw;
                         const idx = context.dataIndex;
@@ -244,12 +252,12 @@ const HistoricalTrendChart = ({ data, hoveredDate, mode, onModeChange }) => {
 
                         if (extra) {
                             return [
-                                `Avg: ₹${avg.toFixed(0)}`,
+                                `Avg: ₹${avg && avg.toFixed(0)}`,
                                 `Max: ₹${extra.max[idx]}`,
                                 `Min: ₹${extra.min[idx]}`
                             ];
                         }
-                        return `Avg: ₹${avg.toFixed(0)}`;
+                        return `Avg: ₹${avg && avg.toFixed(0)}`;
                     }
                 }
             }
