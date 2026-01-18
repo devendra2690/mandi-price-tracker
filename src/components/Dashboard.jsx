@@ -8,6 +8,8 @@ import HistoricalTrendChart from './HistoricalTrendChart';
 import { getUniqueStates, analyzeMarket, filterByTimeRange, analyzeSeasonality } from '../utils/analytics';
 import { RefreshCcw } from 'lucide-react';
 import ExportControls from './ExportControls';
+import MarketTimingGuide from './MarketTimingGuide';
+
 
 
 const Dashboard = ({ data, onReset }) => {
@@ -197,6 +199,7 @@ const Dashboard = ({ data, onReset }) => {
 
                 <RecommendationEngine recommendation={recommendation} />
 
+
                 {/* Quick Stats Card */}
                 {stats && (
                     <div ref={snapshotRef} className="glass-panel">
@@ -279,8 +282,14 @@ const Dashboard = ({ data, onReset }) => {
 
             </div>
 
+            {/* Full Width: Market Timing Guide */}
+            <div style={{ gridColumn: '1 / -1' }}>
+                <MarketTimingGuide seasonalityData={seasonalityData} />
+            </div>
+
             {/* Bottom Row: Full Width Historical Deep Dive */}
             <div ref={chartRef} style={{ gridColumn: '1 / -1' }}>
+
                 <HistoricalTrendChart
                     data={stateFilteredData}
                     hoveredDate={hoveredDate}
