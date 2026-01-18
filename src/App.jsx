@@ -6,14 +6,36 @@ import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 
 function App() {
-  const [data, setData] = useState(null);
+  // Load initial data from localStorage
+  const [data, setData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mandiData');
+      if (saved) {
+        return JSON.parse(saved, (key, value) => {
+          // Reviver to restore Date objects
+          if (key === 'date' || key === 'rawDate') return new Date(value);
+          return value;
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load data", e);
+    }
+    return null;
+  });
 
   const handleDataLoaded = (parsedData) => {
     setData(parsedData);
+    try {
+      localStorage.setItem('mandiData', JSON.stringify(parsedData));
+    } catch (e) {
+      console.error("Failed to save data. File might be too large.", e);
+      alert("Note: Data is too large to save for next visit, but works for now.");
+    }
   };
 
   const handleReset = () => {
     setData(null);
+    localStorage.removeItem('mandiData');
   }
 
   return (
