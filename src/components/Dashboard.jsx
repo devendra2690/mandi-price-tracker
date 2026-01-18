@@ -73,9 +73,13 @@ const Dashboard = ({ data, onReset }) => {
 
         return {
             min: minItem.minPrice,
+            minAvg: minItem.avgPrice,
             minDate: formatDate(minItem.date),
+            minRawDate: minItem.date,
             max: maxItem.maxPrice,
+            maxAvg: maxItem.avgPrice,
             maxDate: formatDate(maxItem.date),
+            maxRawDate: maxItem.date,
             avg
         };
     }, [finalData]);
@@ -147,21 +151,68 @@ const Dashboard = ({ data, onReset }) => {
                         <div style={{ display: 'grid', gap: '1.5rem' }}>
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                    <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Highest Price</p>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
-                                        {stats.maxDate}
-                                    </span>
+                                    <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Peak Month</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>View Chart →</span>
+                                        <span
+                                            onClick={() => handleCrosshairMove(stats.maxRawDate)}
+                                            title={`Click to view details for ${stats.maxDate}`}
+                                            style={{
+                                                fontSize: '0.75rem',
+                                                color: '#fff',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                transition: 'all 0.2s',
+                                                fontWeight: 500
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--text-secondary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                        >
+                                            {stats.maxDate}
+                                        </span>
+                                    </div>
                                 </div>
-                                <p style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--danger)' }}>₹{stats.max}</p>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginTop: '0.25rem' }}>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--danger)' }}>₹{stats.maxAvg.toFixed(0)}</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Max: ₹{stats.max}</p>
+                                </div>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Average Price this month</p>
                             </div>
+
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                    <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Lowest Price</p>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
-                                        {stats.minDate}
-                                    </span>
+                                    <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Lowest Month</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>View Chart →</span>
+                                        <span
+                                            onClick={() => handleCrosshairMove(stats.minRawDate)}
+                                            title={`Click to view details for ${stats.minDate}`}
+                                            style={{
+                                                fontSize: '0.75rem',
+                                                color: '#fff',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                transition: 'all 0.2s',
+                                                fontWeight: 500
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--text-secondary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                        >
+                                            {stats.minDate}
+                                        </span>
+                                    </div>
                                 </div>
-                                <p style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--success)' }}>₹{stats.min}</p>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginTop: '0.25rem' }}>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--success)' }}>₹{stats.minAvg.toFixed(0)}</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Min: ₹{stats.min}</p>
+                                </div>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Average Price this month</p>
                             </div>
                         </div>
                     </div>
