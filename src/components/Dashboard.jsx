@@ -138,6 +138,34 @@ const Dashboard = ({ data, onReset }) => {
         };
     }, [finalData]);
 
+    // Metadata for Header
+    const datasetMeta = useMemo(() => {
+        if (!data || data.length === 0) return null;
+
+        // Commodity Name
+        const uniqueCommodities = [...new Set(data.map(d => d.commodity).filter(Boolean))];
+        const commodityName = uniqueCommodities.length > 0
+            ? uniqueCommodities.join(', ')
+            : "Unknown Commodity";
+
+        // Date Range
+        // Use raw data to get full range, not filtered
+        const dates = data.map(d => new Date(d.date)).filter(d => !isNaN(d));
+        if (dates.length === 0) return { commodity: commodityName, range: "No dates found" };
+
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+
+        return {
+            commodity: commodityName,
+            start: minDate.toLocaleDateString('en-US', options),
+            end: maxDate.toLocaleDateString('en-US', options),
+            recordCount: data.length
+        };
+    }, [data]);
+
     return (
         <div ref={dashboardRef} className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr)', gap: '2rem', padding: '1rem' }}>
 
@@ -145,6 +173,21 @@ const Dashboard = ({ data, onReset }) => {
             {/* Left Column: Charts & Controls */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* Classification Header */}
+                    {datasetMeta && (
+                        <div className="glass-panel" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-primary)' }}>
+                            <div style={{ textTransform: 'uppercase', fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '1px', marginBottom: '4px' }}>
+                                Analysis Report For
+                            </div>
+                            <h2 style={{ fontSize: '1.4rem', color: '#fff', margin: 0, lineHeight: 1.2 }}>{datasetMeta.commodity}</h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                <span>📅 {datasetMeta.start} — {datasetMeta.end}</span>
+                                <span style={{ opacity: 0.3 }}>|</span>
+                                <span>📊 {datasetMeta.recordCount} records</span>
+                            </div>
+                        </div>
+                    )}
+
                     <Filters
                         states={states}
                         selectedState={selectedState}
