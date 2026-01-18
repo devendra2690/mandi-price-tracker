@@ -7,11 +7,16 @@ import SeasonalityChart from './SeasonalityChart';
 import HistoricalTrendChart from './HistoricalTrendChart';
 import { getUniqueStates, analyzeMarket, filterByTimeRange, analyzeSeasonality } from '../utils/analytics';
 import { RefreshCcw } from 'lucide-react';
+import ExportControls from './ExportControls';
+
 
 const Dashboard = ({ data, onReset }) => {
     const [selectedState, setSelectedState] = useState('All');
     const [timeRange, setTimeRange] = useState('All');
     const [historyMode, setHistoryMode] = useState('Month');
+    const dashboardRef = React.useRef(null);
+    const snapshotRef = React.useRef(null);
+
 
     const states = useMemo(() => getUniqueStates(data), [data]);
 
@@ -132,7 +137,8 @@ const Dashboard = ({ data, onReset }) => {
     }, [finalData]);
 
     return (
-        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr)', gap: '2rem' }}>
+        <div ref={dashboardRef} className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr)', gap: '2rem', padding: '1rem' }}>
+
 
             {/* Left Column: Charts & Controls */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -185,13 +191,16 @@ const Dashboard = ({ data, onReset }) => {
                     >
                         <RefreshCcw size={14} /> Upload New File
                     </button>
+                    <ExportControls snapshotRef={snapshotRef} dashboardRef={dashboardRef} />
+
                 </div>
 
                 <RecommendationEngine recommendation={recommendation} />
 
                 {/* Quick Stats Card */}
                 {stats && (
-                    <div className="glass-panel">
+                    <div ref={snapshotRef} className="glass-panel">
+
                         <h4 style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px' }}>
                             Market Snapshot ({timeRange})
                         </h4>

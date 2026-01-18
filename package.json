@@ -16,6 +16,8 @@
     "chart.js": "^4.5.1",
     "chartjs-plugin-zoom": "^2.2.0",
     "framer-motion": "^12.26.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.0.0",
     "lightweight-charts": "^4.2.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
