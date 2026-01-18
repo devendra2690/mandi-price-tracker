@@ -5,6 +5,11 @@ import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 const MarketTimingGuide = ({ seasonalityData }) => {
     if (!seasonalityData || !seasonalityData.monthlyAverages) return null;
 
+    // Calculate Global Seasonal Average (Average of monthly averages)
+    const validMonthsCount = seasonalityData.monthlyAverages.filter(m => m.count > 0).length;
+    const seasonalAvg = seasonalityData.monthlyAverages.reduce((acc, m) => acc + (m.count > 0 ? m.avgPrice : 0), 0) / (validMonthsCount || 1);
+
+
     // Filter valid months and sort by price
     const sortedMonths = [...seasonalityData.monthlyAverages]
         .filter(m => m.count > 0)
@@ -19,8 +24,7 @@ const MarketTimingGuide = ({ seasonalityData }) => {
     const avoidMonths = sortedMonths.slice(-3).reverse(); // Showing highest first
     // Neutral: The rest
     const neutralMonths = sortedMonths.slice(3, -3).sort((a, b) => {
-        // Sort neutral by calendar order for easier reading? Or price?
-        // Let's sort by calendar order
+        // Sort neutral by calendar order
         const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
     });
@@ -33,7 +37,6 @@ const MarketTimingGuide = ({ seasonalityData }) => {
         let Icon = Minus;
         let explanation = "";
 
-        const seasonalAvg = seasonalityData.monthlyAverages.reduce((acc, m) => acc + (m.count > 0 ? m.avgPrice : 0), 0) / seasonalityData.monthlyAverages.filter(m => m.count > 0).length;
         const diffFromAvg = ((month.avgPrice - seasonalAvg) / seasonalAvg) * 100;
 
         switch (type) {
@@ -126,12 +129,27 @@ const MarketTimingGuide = ({ seasonalityData }) => {
                                 Historical Evidence
                             </div>
                             <div style={{ display: 'grid', gap: '4px' }}>
-                                {month.history && month.history.map(h => (
-                                    <div key={h.year} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
-                                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{h.year}</span>
-                                        <span style={{ color: '#e2e8f0', fontSize: '0.8rem', fontWeight: 500 }}>₹{h.price.toFixed(0)}</span>
-                                    </div>
-                                ))}
+                                {month.history && month.history.map(h => {
+                                    // Highlight exceptions:
+                                    // Green if significantly below global seasonal average
+                                    // Red if significantly above global seasonal average
+                                    // Helps user see "good years" even in "bad months"
+                                    const isCheap = h.price < seasonalAvg * 0.9;
+                                    const isExpensive = h.price > seasonalAvg * 1.1;
+
+                                    let priceColor = '#e2e8f0';
+                                    if (isCheap) priceColor = '#34d399';
+                                    if (isExpensive) priceColor = '#f87171';
+
+                                    return (
+                                        <div key={h.year} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+                                            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{h.year}</span>
+                                            <span style={{ color: priceColor, fontSize: '0.8rem', fontWeight: 500 }}>
+                                                ₹{h.price.toFixed(0)}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </motion.div>
@@ -147,9 +165,75 @@ const MarketTimingGuide = ({ seasonalityData }) => {
             className="glass-panel"
             style={{ padding: '1.5rem', marginTop: '2rem' }}
         >
-            <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem' }}>
-                Annual Market Timing Guide
-            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                    Annual Market Timing Guide
+                </h4>
+
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }} className="group">
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        Avg: <span style={{ color: '#e2e8f0', fontWeight: 600 }}>₹{seasonalAvg.toFixed(0)}</span>
+                    </span>
+                    <div style={{
+                        cursor: 'help',
+                        padding: '4px',
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '1px solid #94a3b8', color: '#94a3b8', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>i</div>
+                    </div>
+
+                    {/* Tooltip */}
+                    <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: '100%',
+                        marginTop: '8px',
+                        background: '#1e293b',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        width: '280px',
+                        zIndex: 50,
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                        opacity: 0,
+                        visibility: 'hidden',
+                        transition: 'opacity 0.2s',
+                        pointerEvents: 'none'
+                    }}
+                        className="info-tooltip"
+                    >
+                        <style>{`
+                            .group:hover .info-tooltip {
+                                opacity: 1 !important;
+                                visibility: visible !important;
+                                pointer-events: auto !important;
+                            }
+                        `}</style>
+                        <h5 style={{ color: '#e2e8f0', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Understanding the Data</h5>
+                        <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.75rem', lineHeight: '1.4' }}>
+                            <strong>Annual Average (₹{seasonalAvg.toFixed(0)}):</strong> Calculated by taking the average of all 12 monthly averages.
+                        </p>
+                        <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34d399' }}></div>
+                                <span>Green: Price is &lt;90% of Annual Avg</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f87171' }}></div>
+                                <span>Red: Price is &gt;110% of Annual Avg</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e2e8f0' }}></div>
+                                <span>White: Typical / Average Price</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '2rem' }}>
                 {/* Desktop: 3 columns, Mobile: 1 column */}
