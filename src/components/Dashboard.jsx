@@ -61,35 +61,72 @@ const Dashboard = ({ data, onReset }) => {
     const stats = useMemo(() => {
         if (!finalData.length) return null;
 
-        // Find items with absolute min and max prices
-        let minItem = finalData[0];
-        let maxItem = finalData[0];
-        let totalAvg = 0;
+        let totalOverallAvg = 0;
+
+        // 1. Group data by Month-Year to find true Monthly Averages
+        const monthlyStats = new Map(); // Key: "YYYY-MM" -> { totalAvg: 0, count: 0, min: Inf, max: -Inf, rawDate: Date }
 
         for (const item of finalData) {
-            if (item.minPrice < minItem.minPrice) minItem = item;
-            if (item.maxPrice > maxItem.maxPrice) maxItem = item;
-            totalAvg += item.avgPrice;
+            totalOverallAvg += item.avgPrice;
+
+            if (!item.date) continue;
+            const d = new Date(item.date);
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+
+            if (!monthlyStats.has(key)) {
+                monthlyStats.set(key, {
+                    totalAvg: 0,
+                    count: 0,
+                    min: Infinity,
+                    max: -Infinity,
+                    rawDate: d // Keep one date for reference
+                });
+            }
+
+            const monthEntry = monthlyStats.get(key);
+            monthEntry.totalAvg += item.avgPrice;
+            monthEntry.count += 1;
+            monthEntry.min = Math.min(monthEntry.min, item.minPrice);
+            monthEntry.max = Math.max(monthEntry.max, item.maxPrice);
         }
 
-        const avg = (totalAvg / finalData.length).toFixed(0);
+        const avg = (totalOverallAvg / finalData.length).toFixed(0);
+
+        // 2. Find Peak and Lowest Months from the aggregated data
+        let peakMonth = null;
+        let lowestMonth = null;
+        let highestMonthlyAvg = -Infinity;
+        let lowestMonthlyAvg = Infinity;
+
+        for (const [key, stats] of monthlyStats.entries()) {
+            const monthlyAvg = stats.totalAvg / stats.count;
+
+            if (monthlyAvg > highestMonthlyAvg) {
+                highestMonthlyAvg = monthlyAvg;
+                peakMonth = { ...stats, avg: monthlyAvg };
+            }
+
+            if (monthlyAvg < lowestMonthlyAvg) {
+                lowestMonthlyAvg = monthlyAvg;
+                lowestMonth = { ...stats, avg: monthlyAvg };
+            }
+        }
 
         // Helper to format date
-        const formatDate = (dateStr) => {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const formatDate = (dateObj) => {
+            if (!dateObj) return '';
+            return dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         };
 
         return {
-            min: minItem.minPrice,
-            minAvg: minItem.avgPrice,
-            minDate: formatDate(minItem.date),
-            minRawDate: minItem.date,
-            max: maxItem.maxPrice,
-            maxAvg: maxItem.avgPrice,
-            maxDate: formatDate(maxItem.date),
-            maxRawDate: maxItem.date,
+            min: lowestMonth ? lowestMonth.min : 0,
+            minAvg: lowestMonth ? lowestMonth.avg : 0,
+            minDate: lowestMonth ? formatDate(lowestMonth.rawDate) : '',
+            minRawDate: lowestMonth ? lowestMonth.rawDate : null,
+            max: peakMonth ? peakMonth.max : 0,
+            maxAvg: peakMonth ? peakMonth.avg : 0,
+            maxDate: peakMonth ? formatDate(peakMonth.rawDate) : '',
+            maxRawDate: peakMonth ? peakMonth.rawDate : null,
             avg
         };
     }, [finalData]);
