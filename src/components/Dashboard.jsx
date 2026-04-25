@@ -153,8 +153,8 @@ const Dashboard = ({ data, onReset }) => {
         const dates = data.map(d => new Date(d.date)).filter(d => !isNaN(d));
         if (dates.length === 0) return { commodity: commodityName, range: "No dates found" };
 
-        const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(Math.max(...dates));
+        const minDate = new Date(dates.reduce((min, d) => d < min ? d : min, dates[0]));
+        const maxDate = new Date(dates.reduce((max, d) => d > max ? d : max, dates[0]));
 
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
 
